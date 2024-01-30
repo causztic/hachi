@@ -7,30 +7,24 @@ defmodule Hachi.Consumer do
   alias Nostrum.Struct.Interaction
   alias Nostrum.Cache.GuildCache
 
-  # Soundcloud link will be fed through youtube-dl
-  @soundcloud_url "https://soundcloud.com/fyre-brand/level-up"
-  # Audio file will be fed directly to ffmpeg
-  @nut_file_url "https://brandthill.com/files/nut.wav"
-
   # Compile-time helper for defining Discord Application Command options
   opt = fn type, name, desc, opts ->
     %{type: type, name: name, description: desc}
     |> Map.merge(Enum.into(opts, %{}))
   end
 
-  @play_opts [
-    opt.(1, "song", "Play a song", []),
-    opt.(1, "nut", "Play a nut sound", []),
-    opt.(1, "file", "Play a file", options: [opt.(3, "url", "File URL to play", required: true)]),
-    opt.(1, "url", "Play a URL from a common service",
-      options: [opt.(3, "url", "URL to play", required: true)]
-    )
-  ]
-
   @commands [
     {"ping", "ping", []},
     {"summon", "Summon bot to your voice channel", []},
-    {"play", "Play a song", @play_opts},
+    {"play", "Play a song", [
+      opt.(1, "url", "Play a URL from a common service",
+        options: [opt.(3, "url", "URL to play", required: true)]
+      )
+    ]},
+    {"leave", "Tell bot to leave your voice channel", []},
+    {"stop", "Stop the playing sound", []},
+    {"pause", "Pause the playing sound", []},
+    {"resume", "Resume the paused sound", []}
   ]
 
   def create_commands(guild_id) do
@@ -89,12 +83,20 @@ defmodule Hachi.Consumer do
     :noop
   end
 
+  def do_command(%{guild_id: guild_id, data: %{name: "leave"}}) do
+    Voice.leave_channel(guild_id)
+    {:msg, "See you later :wave:"}
+  end
+
+  def do_command(%{guild_id: guild_id, data: %{name: "pause"}}), do: Voice.pause(guild_id)
+
+  def do_command(%{guild_id: guild_id, data: %{name: "resume"}}), do: Voice.resume(guild_id)
+
+  def do_command(%{guild_id: guild_id, data: %{name: "stop"}}), do: Voice.stop(guild_id)
+
   def do_command(%{guild_id: guild_id, data: %{name: "play", options: options}}) do
     if Voice.ready?(guild_id) do
       case options do
-        [%{name: "song"}] -> Voice.play(guild_id, @soundcloud_url, :ytdl)
-        [%{name: "nut"}] -> Voice.play(guild_id, @nut_file_url, :url)
-        [%{name: "file", options: [%{value: url}]}] -> Voice.play(guild_id, url, :url)
         [%{name: "url", options: [%{value: url}]}] -> Voice.play(guild_id, url, :ytdl)
       end
     else
