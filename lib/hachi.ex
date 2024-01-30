@@ -1,18 +1,7 @@
 defmodule Hachi do
-  @moduledoc """
-  Documentation for `Hachi`.
-  """
+  use Application
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Hachi.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def start(_type, _args) do
+    Hachi.Supervisor.start_link([])
   end
 end
