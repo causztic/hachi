@@ -111,7 +111,14 @@ defmodule Hachi.Consumer do
   end
 
   def do_command(%{data: %{name: "server", options: [%{name: "start", options: [%{value: "palworld"}]}]}}) do
-    System.cmd("docker", ["run", "palworld", "-d"])
+    Exexec.run_link(
+      "docker compose -f servers/palworld/docker-compose.yml start",
+      [
+        {:stdout, fn (_device, _pid, binary) -> Logger.info(binary) end},
+        {:stderr, fn (_device, _pid, binary) -> Logger.error(binary) end}
+      ]
+    )
+    {:msg, "Server started"}
   end
 
   def do_command(%{guild_id: guild_id, data: %{name: "summon"}} = interaction) do
