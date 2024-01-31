@@ -21,6 +21,14 @@ defmodule Hachi.Consumer do
         options: [opt.(3, "url", "URL to play", required: true)]
       )
     ]},
+    {"server", "Server-related commands", [
+      opt.(1, "start", "Start a server",
+        options: [
+          opt.(3, "name", "The name of the server", required: true, choices: [
+           %{ name: "palworld", value: "palworld" }
+        ])]
+      )
+    ]},
     {"leave", "Tell bot to leave your voice channel", []},
     {"stop", "Stop the playing sound", []},
     {"pause", "Pause the playing sound", []},
@@ -94,14 +102,16 @@ defmodule Hachi.Consumer do
 
   def do_command(%{guild_id: guild_id, data: %{name: "stop"}}), do: Voice.stop(guild_id)
 
-  def do_command(%{guild_id: guild_id, data: %{name: "play", options: options}}) do
+  def do_command(%{guild_id: guild_id, data: %{name: "play", options: [%{name: "url", options: [%{value: url}]}]}}) do
     if Voice.ready?(guild_id) do
-      case options do
-        [%{name: "url", options: [%{value: url}]}] -> Voice.play(guild_id, url, :ytdl)
-      end
+      Voice.play(guild_id, url, :ytdl)
     else
       {:msg, "I must be in a voice channel before playing audio"}
     end
+  end
+
+  def do_command(%{data: %{name: "server", options: [%{name: "start", options: [%{value: "palworld"}]}]}}) do
+    System.cmd("docker", ["run", "palworld", "-d"])
   end
 
   def do_command(%{guild_id: guild_id, data: %{name: "summon"}} = interaction) do
