@@ -57,6 +57,7 @@ defmodule Hachi.Consumer do
     guilds
     |> Enum.map(fn guild -> guild.id end)
     |> Enum.each(&create_commands/1)
+    Api.update_status(:online, "https://www.github.com/causztic/hachi")
   end
 
   def handle_event({:INTERACTION_CREATE, %Interaction{data: %{name: "ping"}} = interaction, _ws_state}) do
