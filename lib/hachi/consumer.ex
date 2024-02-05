@@ -26,8 +26,16 @@ defmodule Hachi.Consumer do
       opt.(1, "start", "Start a server",
         options: [
           opt.(3, "name", "The name of the server", required: true, choices: [
-           %{ name: "palworld", value: "palworld" }
-        ])]
+           %{ name: "palworld", value: "palworld" },
+          ]),
+        ]
+      ),
+      opt.(1, "stop", "Stop a server",
+        options: [
+          opt.(3, "name", "The name of the server", required: true, choices: [
+          %{ name: "palworld", value: "palworld" },
+          ]),
+        ]
       )
     ]},
     {"leave", "Tell bot to leave your voice channel", []},
@@ -119,6 +127,16 @@ defmodule Hachi.Consumer do
       elem(1)
 
     {_, msg} = Palworld.start(pid)
+    {:msg, msg}
+  end
+
+  def do_command(%{data: %{name: "server", options: [%{name: "stop", options: [%{ value: "palworld" }]}]}}) do
+    pid = Hachi.Supervisor |>
+      Supervisor.which_children |>
+      Enum.find(&(elem(&1,0) == Palworld)) |>
+      elem(1)
+
+    {_, msg} = Palworld.stop(pid)
     {:msg, msg}
   end
 
