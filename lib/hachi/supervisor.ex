@@ -1,5 +1,6 @@
 defmodule Hachi.Supervisor do
   alias Hachi.Consumer
+  alias Hachi.Palworld
   use Supervisor
 
   def start_link(args) do
@@ -8,7 +9,7 @@ defmodule Hachi.Supervisor do
 
   @impl true
   def init(_init_arg) do
-    children = [Consumer]
+    children = [Consumer, Palworld]
 
     Supervisor.init(children, strategy: :one_for_one)
   end

@@ -2,6 +2,7 @@ defmodule Hachi.Consumer do
   use Nostrum.Consumer
   require Logger
 
+  alias Hachi.Palworld
   alias Nostrum.Api
   alias Nostrum.Voice
   alias Nostrum.Struct.Interaction
@@ -111,15 +112,14 @@ defmodule Hachi.Consumer do
     end
   end
 
-  def do_command(%{data: %{name: "server", options: [%{name: "start", options: [%{ value: server }]}]}}) do
-    Exexec.run_link(
-      "docker compose -f servers/#{server}/docker-compose.yml start",
-      [
-        {:stdout, fn (_device, _pid, binary) -> Logger.info(binary) end},
-        {:stderr, fn (_device, _pid, binary) -> Logger.error(binary) end}
-      ]
-    )
-    {:msg, "#{server} server started"}
+  def do_command(%{data: %{name: "server", options: [%{name: "start", options: [%{ value: "palworld" }]}]}}) do
+    pid = Hachi.Supervisor |>
+      Supervisor.which_children |>
+      Enum.find(&(elem(&1,0) == Palworld)) |>
+      elem(1)
+
+    {_, msg} = Palworld.start(pid)
+    {:msg, msg}
   end
 
   def do_command(%{guild_id: guild_id, data: %{name: "summon"}} = interaction) do

@@ -26,3 +26,4 @@ hachi-*.tar
 /tmp/
 
 /config/config.exs
+servers/palworld/game
