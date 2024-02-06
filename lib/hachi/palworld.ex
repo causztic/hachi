@@ -48,7 +48,7 @@ defmodule Hachi.Palworld do
   @impl true
   def handle_call(:stop, _from, state = %State{ status: :running }) do
     case Exexec.stop(state.pid) do
-      :ok -> {:stop, {:ok, "server stopped"}, %State{}}
+      :ok -> {:reply, {:ok, "server stopped"}, %State{}}
       {:error, any} -> {:reply, {:error, any}, state}
     end
   end
