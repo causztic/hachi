@@ -41,7 +41,8 @@ defmodule Hachi.Consumer do
     {"leave", "Tell bot to leave your voice channel", []},
     {"stop", "Stop the playing sound", []},
     {"pause", "Pause the playing sound", []},
-    {"resume", "Resume the paused sound", []}
+    {"resume", "Resume the paused sound", []},
+    {"roll", "Roll n m sided dice", [opt.(3, "ndm", "Dice combination to roll", required: true)]}
   ]
 
   def create_commands(guild_id) do
@@ -67,6 +68,19 @@ defmodule Hachi.Consumer do
     |> Enum.map(fn guild -> guild.id end)
     |> Enum.each(&create_commands/1)
     Api.update_status(:online, "https://www.github.com/causztic/hachi")
+  end
+
+  def handle_event({:INTERACTION_CREATE, %Interaction{data: %{name: "roll", options: [%{ value: ndm }]}} = interaction, _ws_state}) do
+    [n, m] = String.split(ndm, "d") |> Enum.map(&String.to_integer/1)
+    result = for _ <- 1..n, do: :rand.uniform(m)
+    response = %{
+      type: 4,  # ChannelMessageWithSource
+      data: %{
+        content: Enum.join(result, ", ")
+      }
+    }
+
+    Api.create_interaction_response(interaction, response)
   end
 
   def handle_event({:INTERACTION_CREATE, %Interaction{data: %{name: "ping"}} = interaction, _ws_state}) do
