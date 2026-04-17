@@ -1,10 +1,6 @@
-const CODE_KEYWORD_PATTERN =
-  /\b(bash|bug|code|coding|debug|failing test|fix|git|parser|python|refactor|shell|terminal|typescript)\b/i;
-
 export type IntentRoute =
   | { reason: "default-rp"; target: "rp" }
-  | { reason: "explicit-prefix"; target: "codex" }
-  | { reason: "keyword-classifier"; target: "codex" };
+  | { reason: "explicit-prefix"; target: "codex" };
 
 export function routeIntent(input: {
   content: string;
@@ -16,13 +12,6 @@ export function routeIntent(input: {
   if (input.explicitPrefixes.some((prefix) => lowered.startsWith(prefix))) {
     return {
       reason: "explicit-prefix",
-      target: "codex"
-    };
-  }
-
-  if (CODE_KEYWORD_PATTERN.test(content)) {
-    return {
-      reason: "keyword-classifier",
       target: "codex"
     };
   }

@@ -53,7 +53,7 @@ describe("createManagedMessageHandler", () => {
 
     await handleManagedMessage({
       channelId: "c1",
-      content: "walk with me through the shrine at sunset",
+      content: "please debug this failing test suite",
       guildId: "g1",
       history: async () => [],
       messageId: "m1",
