@@ -19,6 +19,7 @@
     "vitest": "^4.1.4"
   },
   "dependencies": {
-    "better-sqlite3": "^12.9.0"
+    "better-sqlite3": "^12.9.0",
+    "discord.js": "^14.26.3"
   }
 }
