@@ -1,38 +1,48 @@
-# OpenACP Setup
+# Standalone Bot Setup
 
-This project uses a local OpenACP workspace in `.openacp/` and does not commit that directory.
+OpenACP has been removed from the runtime path. This project now runs as a standalone Discord bot service from this repository.
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 22+
 - `codex` available on `PATH`
-- `@openacp/cli` installed
+- `llama-server` available on `PATH`
 - a Discord bot token
-- a Discord guild ID
+- one or more Discord guild IDs
 
 ## Install
 
 ```bash
-npm install -g @openacp/cli
-npm install @openacp/discord-adapter --prefix .openacp/plugins --save --ignore-scripts
+npm install
 ```
 
 ## Environment
 
-Set these before starting OpenACP:
+Set these before starting the bot:
 
 ```bash
-export OPENACP_DISCORD_BOT_TOKEN=...
-export OPENACP_DISCORD_GUILD_ID=...
+export HACHI_DISCORD_BOT_TOKEN=...
+export HACHI_ALLOWED_GUILD_IDS=...
+export HACHI_REPO_ROOT=/path/to/hachi
+export HACHI_LLAMA_SERVER_BIN=llama-server
 ```
 
-You can also place equivalent values into the local OpenACP Discord settings file under `.openacp/plugins/data/@openacp/discord-adapter/settings.json`, but that file should stay uncommitted.
+`HACHI_ALLOWED_GUILD_IDS` accepts a comma-separated list. The bot ignores guilds outside that allow-list.
 
 ## Run
 
 ```bash
-openacp --dir /path/to/hachi --foreground
+npm run dev
 ```
+
+On first start, the bot downloads the default GGUF model into `.hachi/models/` and then starts `llama-server` locally.
+
+## Runtime layout
+
+- `.hachi/db/hachi.sqlite` - thread/session state and Codex run metadata
+- `.hachi/logs/codex/` - raw Codex stdout/stderr logs
+- `.hachi/models/` - downloaded GGUF models
+- `.hachi/tmp/` - transient runtime state
 
 ## Discord-side requirements
 
@@ -47,6 +57,13 @@ openacp --dir /path/to/hachi --foreground
   - `Send Messages in Threads`
   - `Read Message History`
 
+## Behavior
+
+- Mention the bot in a guild text channel to create or reuse a dedicated thread.
+- Follow-up messages in that managed thread do not need another mention.
+- `/code` or `!code` forces Codex handoff.
+- Other messages stay in the RP path unless the message clearly looks like programming or repo work.
+
 ## Repository policy
 
 Commit:
@@ -54,11 +71,13 @@ Commit:
 - `.gitignore`
 - `README.md`
 - `.env.example`
+- `config/defaults.jsonc`
+- `prompts/`
 - docs describing setup
 
 Do not commit:
 
-- `.openacp/`
+- `.hachi/`
 - bot tokens
 - generated logs
 - machine-local state

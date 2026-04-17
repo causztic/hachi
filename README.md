@@ -1,44 +1,57 @@
 # hachi
 
-This repo stores the project-level OpenACP setup for running this workspace through Discord with Codex as the default agent.
+This repo now runs a standalone Discord bot instead of OpenACP.
 
-Local runtime state and secrets live under `.openacp/` and are intentionally not committed.
+The bot:
+
+- listens in guild text channels and threads
+- creates or reuses a dedicated thread for managed conversations
+- answers in a fixed RP persona through a local `llama.cpp` server
+- hands coding-specific messages to local `codex`
+- stores runtime state under `.hachi/`
 
 ## Committed files
 
 - `.gitignore`
 - `.env.example`
+- `config/defaults.jsonc`
+- `prompts/`
 - `docs/openacp-setup.md`
 
 ## Local setup
 
-1. Install the OpenACP CLI:
+1. Install dependencies:
 
 ```bash
-npm install -g @openacp/cli
+npm install
 ```
 
-2. Install the Discord adapter into the local workspace:
+2. Make sure the local runtimes are available on `PATH`:
 
 ```bash
-npm install @openacp/discord-adapter --prefix .openacp/plugins --save --ignore-scripts
+codex --version
+llama-server --version
 ```
 
-3. Set the required Discord values:
+3. Set the required environment values:
 
 ```bash
-export OPENACP_DISCORD_BOT_TOKEN=...
-export OPENACP_DISCORD_GUILD_ID=...
+export HACHI_DISCORD_BOT_TOKEN=...
+export HACHI_ALLOWED_GUILD_IDS=...
+export HACHI_REPO_ROOT=/path/to/hachi
+export HACHI_LLAMA_SERVER_BIN=llama-server
 ```
 
-4. Start OpenACP for this workspace:
+4. Start the bot:
 
 ```bash
-openacp --dir /path/to/hachi --foreground
+npm run dev
 ```
 
 ## Notes
 
-- `.openacp/` contains secrets, logs, and local runtime state.
-- The default agent for this workspace is `codex`.
+- The first `llama.cpp` startup downloads the default GGUF into `.hachi/models/`.
+- Codex run logs are written under `.hachi/logs/codex/`.
+- Structured runtime state is stored in `.hachi/db/hachi.sqlite`.
 - Discord setup still requires enabling Message Content Intent and inviting the bot with `bot` and `applications.commands` scopes.
+- `/code` and `!code` force Codex handoff. Other messages use the RP model unless the lightweight router identifies clear coding intent.
