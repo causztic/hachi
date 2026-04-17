@@ -72,6 +72,7 @@ type RuntimeBootstrapDependencies = {
     targetDir: string
   ) => Promise<void>;
   fetchImpl?: typeof fetch;
+  log?: (message: string) => void;
   mkdirImpl?: typeof mkdir;
   mkdtempImpl?: typeof mkdtemp;
   rmImpl?: typeof rm;
@@ -204,6 +205,7 @@ export async function ensureOfficialLlamaRuntime(
   const ensureDirImpl = dependencies.ensureDirImpl ?? ensureDir;
   const extractLayer = dependencies.extractLayer ?? extractLayerArchive;
   const fetchImpl = dependencies.fetchImpl ?? fetch;
+  const log = dependencies.log ?? (() => undefined);
   const mkdirImpl = dependencies.mkdirImpl ?? mkdir;
   const mkdtempImpl = dependencies.mkdtempImpl ?? mkdtemp;
   const rmImpl = dependencies.rmImpl ?? rm;
@@ -216,6 +218,10 @@ export async function ensureOfficialLlamaRuntime(
   } catch {
     // Bootstrap continues below when the binary is missing.
   }
+
+  log(
+    `bootstrapping official llama runtime from ${config.source.registry}/${config.source.repository}:${config.source.tag}`
+  );
 
   const service = getRegistryService(config.source.registry);
   const tokenPayload = (await fetchRegistryJson(
@@ -259,6 +265,7 @@ export async function ensureOfficialLlamaRuntime(
       }
 
       const mediaType = layer.mediaType ?? "application/vnd.oci.image.layer.v1.tar";
+      log(`extracting runtime layer ${index + 1}/${manifest.layers?.length ?? 0}`);
       const layerResponse = await fetchImpl(
         `${config.source.registry}/v2/${config.source.repository}/blobs/${layer.digest}`,
         {
@@ -286,6 +293,7 @@ export async function ensureOfficialLlamaRuntime(
 
     try {
       await statImpl(binaryPath);
+      log(`official llama runtime ready at ${binaryPath}`);
     } catch {
       throw new Error(
         `failed to bootstrap official llama runtime: missing ${config.serverBinaryRelativePath} from ${config.source.registry}/${config.source.repository}:${config.source.tag}`

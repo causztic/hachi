@@ -25,6 +25,18 @@ async function createTempModelDir() {
   };
 }
 
+async function createEmptyModelDir() {
+  const tempRoot = await mkdtemp(join(tmpdir(), "hachi-llama-server-"));
+  const modelsDir = join(tempRoot, "models");
+
+  await mkdir(modelsDir, { recursive: true });
+
+  return {
+    modelsDir,
+    tempRoot
+  };
+}
+
 describe("createManagedLlamaServer", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -175,6 +187,7 @@ describe("createManagedLlamaServer", () => {
     const { modelsDir, tempRoot } = await createTempModelDir();
     const childProcess = new FakeChildProcess();
     const ensureRuntime = vi.fn().mockResolvedValue(undefined);
+    const log = vi.fn();
     let releaseReady!: () => void;
     const waitForReady = vi.fn(
       () =>
@@ -197,6 +210,7 @@ describe("createManagedLlamaServer", () => {
       {
         ensureRuntime,
         fetchImpl: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
+        log,
         spawn: vi.fn(() => childProcess as never),
         waitForReady
       }
@@ -212,13 +226,66 @@ describe("createManagedLlamaServer", () => {
     });
 
     expect(ensureRuntime).toHaveBeenCalledOnce();
+    expect(log).toHaveBeenCalledWith(
+      "checking for an existing llama-server on 127.0.0.1:8080"
+    );
+    expect(log).toHaveBeenCalledWith("ensuring local llama runtime");
+    expect(log).toHaveBeenCalledWith(
+      "using existing llama model Qwen3-14B-Q5_K_M.gguf"
+    );
+    expect(log).toHaveBeenCalledWith(
+      "starting managed llama-server for qwen3-14b-q5-k-m"
+    );
+    expect(log).toHaveBeenCalledWith(
+      "waiting for llama-server on 127.0.0.1:8080"
+    );
     expect(resolved).toBe(false);
 
     try {
       releaseReady();
       await startPromise;
+      expect(log).toHaveBeenCalledWith("llama-server ready on 127.0.0.1:8080");
     } finally {
       llamaServer.stop();
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("logs when it has to download the configured model", async () => {
+    const { modelsDir, tempRoot } = await createEmptyModelDir();
+    const log = vi.fn();
+    const llamaServer = createManagedLlamaServer(
+      {
+        host: "127.0.0.1",
+        model: {
+          filename: "Qwen3-14B-Q5_K_M.gguf",
+          name: "qwen3-14b-q5-k-m",
+          url: "https://example.invalid/model.gguf"
+        },
+        modelsDir,
+        port: 8080,
+        serverBinary: "llama-server"
+      },
+      {
+        fetchImpl: vi.fn().mockResolvedValue(
+          new Response("model", {
+            status: 200
+          })
+        ),
+        log
+      }
+    );
+
+    try {
+      await llamaServer.ensureModel();
+
+      expect(log).toHaveBeenCalledWith(
+        "downloading llama model Qwen3-14B-Q5_K_M.gguf"
+      );
+      expect(log).toHaveBeenCalledWith(
+        "downloaded llama model Qwen3-14B-Q5_K_M.gguf"
+      );
+    } finally {
       await rm(tempRoot, { force: true, recursive: true });
     }
   });

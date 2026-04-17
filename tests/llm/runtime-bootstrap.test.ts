@@ -99,6 +99,7 @@ describe("ensureOfficialLlamaRuntime", () => {
         await writeFile(binaryPath, "binary", "utf8");
       }
     );
+    const log = vi.fn();
 
     try {
       await ensureOfficialLlamaRuntime(
@@ -118,7 +119,8 @@ describe("ensureOfficialLlamaRuntime", () => {
         },
         {
           extractLayer,
-          fetchImpl
+          fetchImpl,
+          log
         }
       );
 
@@ -134,6 +136,17 @@ describe("ensureOfficialLlamaRuntime", () => {
         })
       );
       expect(extractLayer).toHaveBeenCalledTimes(2);
+      expect(log).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "bootstrapping official llama runtime from https://ghcr.io/ggml-org/llama.cpp:server-cuda-b7212"
+        )
+      );
+      expect(log).toHaveBeenCalledWith(
+        expect.stringContaining("extracting runtime layer 1/2")
+      );
+      expect(log).toHaveBeenCalledWith(
+        expect.stringContaining("official llama runtime ready")
+      );
       await stat(binaryPath);
     } finally {
       await rm(tempRoot, { force: true, recursive: true });

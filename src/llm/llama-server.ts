@@ -27,6 +27,7 @@ type ManagedLlamaServerDependencies = {
   ensureDir?: typeof ensureDir;
   ensureRuntime?: () => Promise<void>;
   fetchImpl?: typeof fetch;
+  log?: (message: string) => void;
   sleep?: typeof sleep;
   spawn?: typeof spawn;
   stat?: typeof stat;
@@ -189,12 +190,16 @@ export function createManagedLlamaServer(
   const statImpl = dependencies.stat ?? stat;
   const ensureDirImpl = dependencies.ensureDir ?? ensureDir;
   const fetchImpl = dependencies.fetchImpl ?? fetch;
+  const log = dependencies.log ?? (() => undefined);
   const spawnImpl = dependencies.spawn ?? spawn;
   const sleepImpl = dependencies.sleep ?? sleep;
   const ensureRuntime =
     dependencies.ensureRuntime ??
     (config.runtime
-      ? () => ensureOfficialLlamaRuntime(config.runtime as OfficialLlamaRuntimeConfig)
+      ? () =>
+          ensureOfficialLlamaRuntime(config.runtime as OfficialLlamaRuntimeConfig, {
+            log
+          })
       : async () => undefined);
 
   const modelPath = join(config.modelsDir, config.model.filename);
@@ -203,8 +208,10 @@ export function createManagedLlamaServer(
     async ensureModel() {
       try {
         await statImpl(modelPath);
+        log(`using existing llama model ${config.model.filename}`);
         return modelPath;
       } catch {
+        log(`downloading llama model ${config.model.filename}`);
         await ensureDirImpl(config.modelsDir);
         const response = await fetchImpl(config.model.url);
         const responseBody = response.body;
@@ -230,10 +237,12 @@ export function createManagedLlamaServer(
           ).catch(reject);
         });
 
+        log(`downloaded llama model ${config.model.filename}`);
         return modelPath;
       }
     },
     async start() {
+      log(`checking for an existing llama-server on ${config.host}:${config.port}`);
       const existingServer = await probeExistingServer({
         baseUrl: `http://${config.host}:${config.port}`,
         fetchImpl,
@@ -241,6 +250,7 @@ export function createManagedLlamaServer(
       });
 
       if (existingServer.kind === "reuse") {
+        log(`reusing existing llama-server on ${config.host}:${config.port}`);
         ownsProcess = false;
         processRef = null;
         return;
@@ -252,6 +262,7 @@ export function createManagedLlamaServer(
         );
       }
 
+      log("ensuring local llama runtime");
       await ensureRuntime();
       const resolvedModelPath = await this.ensureModel();
       const command = buildLlamaServerCommand({
@@ -261,6 +272,7 @@ export function createManagedLlamaServer(
         serverBinary: config.serverBinary
       });
 
+      log(`starting managed llama-server for ${config.model.name}`);
       processRef = spawnImpl(command.command, command.args, {
         stdio: "pipe"
       });
@@ -280,6 +292,7 @@ export function createManagedLlamaServer(
       });
 
       try {
+        log(`waiting for llama-server on ${config.host}:${config.port}`);
         await Promise.race([
           startupFailure.promise,
           (
@@ -296,6 +309,7 @@ export function createManagedLlamaServer(
             process: processRef
           })
         ]);
+        log(`llama-server ready on ${config.host}:${config.port}`);
       } catch (error) {
         processRef.kill("SIGTERM");
         processRef = null;
