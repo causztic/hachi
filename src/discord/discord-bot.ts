@@ -3,7 +3,8 @@ import {
   Client,
   GatewayIntentBits,
   type Message,
-  type TextBasedChannel
+  type PublicThreadChannel,
+  type TextChannel
 } from "discord.js";
 import {
   buildThreadName,
@@ -14,7 +15,9 @@ export type ManagedDiscordMessage = {
   channelId: string;
   content: string;
   guildId: string;
+  history(): Promise<Array<{ content: string; role: "assistant" | "user" }>>;
   messageId: string;
+  reply(content: string): Promise<void>;
   threadId: string;
 };
 
@@ -42,7 +45,7 @@ export function createDiscordBot(
 
   async function resolveTargetChannel(
     message: Message
-  ): Promise<TextBasedChannel | null> {
+  ): Promise<PublicThreadChannel<false> | TextChannel | null> {
     const hasMention = client.user ? message.mentions.has(client.user.id) : false;
     const existingThreadId = message.channel.isThread() ? message.channel.id : null;
     const decision = decideThreadAction({
@@ -61,7 +64,7 @@ export function createDiscordBot(
       message.channel.type === ChannelType.GuildText
     ) {
       return message.startThread({
-        name: buildThreadName(message.author.displayName ?? message.author.username)
+        name: buildThreadName(message.member?.displayName ?? message.author.username)
       });
     }
 
@@ -86,11 +89,29 @@ export function createDiscordBot(
       return;
     }
 
+    const botUserId = client.user?.id ?? "";
+
     await handlers.onManagedMessage({
       channelId: targetChannel.id,
       content: message.content,
       guildId: message.guildId,
+      history: async () => {
+        const recentMessages = await targetChannel.messages.fetch({ limit: 10 });
+
+        return [...recentMessages.values()]
+          .reverse()
+          .filter(
+            (entry) => entry.id !== message.id && entry.content.trim().length > 0
+          )
+          .map((entry) => ({
+            content: entry.content,
+            role: entry.author.id === botUserId ? "assistant" : "user"
+          }));
+      },
       messageId: message.id,
+      reply: async (content) => {
+        await targetChannel.send(content);
+      },
       threadId: targetChannel.id
     });
   });

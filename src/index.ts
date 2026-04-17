@@ -1,5 +1,17 @@
 import { createApp } from "./app";
 
-const app = createApp();
+const app = await createApp();
 
-void app.start();
+const stop = async () => {
+  await app.stop();
+  process.exit(0);
+};
+
+process.on("SIGINT", () => {
+  void stop();
+});
+process.on("SIGTERM", () => {
+  void stop();
+});
+
+await app.start();
