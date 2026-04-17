@@ -6,7 +6,7 @@ OpenACP has been removed from the runtime path. This project now runs as a stand
 
 - Node.js 22+
 - `codex` available on `PATH`
-- `llama-server` available on `PATH`
+- WSL
 - a Discord bot token
 - one or more Discord guild IDs
 
@@ -23,11 +23,11 @@ Set these before starting the bot:
 ```bash
 export HACHI_DISCORD_BOT_TOKEN=...
 export HACHI_ALLOWED_GUILD_IDS=...
-export HACHI_REPO_ROOT=/path/to/hachi
-export HACHI_LLAMA_SERVER_BIN=llama-server
 ```
 
 `HACHI_ALLOWED_GUILD_IDS` accepts a comma-separated list. The bot ignores guilds outside that allow-list.
+`HACHI_REPO_ROOT` is only needed when you start the bot from outside the repo root.
+`HACHI_LLAMA_SERVER_BIN` is only needed when you want to override the shipped WSL launcher.
 
 ## Run
 
@@ -35,13 +35,14 @@ export HACHI_LLAMA_SERVER_BIN=llama-server
 npm run dev
 ```
 
-On first start, the bot downloads the default GGUF model into `.hachi/models/` and then starts `llama-server` locally.
+On first start, the bot downloads the default GGUF model into `.hachi/models/` and then starts the WSL-local `scripts/llama-server-wsl` launcher.
 
 ## Runtime layout
 
 - `.hachi/db/hachi.sqlite` - thread/session state and Codex run metadata
 - `.hachi/logs/codex/` - raw Codex stdout/stderr logs
 - `.hachi/models/` - downloaded GGUF models
+- `.hachi/bin/llama-server-cuda-linux/rootfs/` - Linux CUDA llama.cpp runtime unpacked inside WSL
 - `.hachi/tmp/` - transient runtime state
 
 ## Discord-side requirements

@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+
 export type DefaultModel = {
   filename: string;
   name: string;
@@ -12,6 +14,14 @@ const DEFAULT_MODEL: DefaultModel = {
 
 export function getDefaultModel(): DefaultModel {
   return DEFAULT_MODEL;
+}
+
+export function resolveServerBinary(serverBinary: string, repoRoot: string) {
+  if (!serverBinary.includes("/")) {
+    return serverBinary;
+  }
+
+  return resolve(repoRoot, serverBinary);
 }
 
 export function buildLlamaServerCommand(input: {

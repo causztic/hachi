@@ -30,7 +30,7 @@ npm install
 
 ```bash
 codex --version
-llama-server --version
+scripts/llama-server-wsl --version
 ```
 
 3. Set the required environment values:
@@ -38,8 +38,6 @@ llama-server --version
 ```bash
 export HACHI_DISCORD_BOT_TOKEN=...
 export HACHI_ALLOWED_GUILD_IDS=...
-export HACHI_REPO_ROOT=/path/to/hachi
-export HACHI_LLAMA_SERVER_BIN=llama-server
 ```
 
 4. Start the bot:
@@ -50,7 +48,10 @@ npm run dev
 
 ## Notes
 
+- `scripts/llama-server-wsl` keeps the local model server inside WSL and loads the Linux CUDA runtime from `.hachi/bin/llama-server-cuda-linux/rootfs`.
 - The first `llama.cpp` startup downloads the default GGUF into `.hachi/models/`.
+- Set `HACHI_LLAMA_SERVER_BIN` only if you want to override the shipped WSL launcher.
+- Set `HACHI_REPO_ROOT` only if you start the bot from outside the repo root.
 - Codex run logs are written under `.hachi/logs/codex/`.
 - Structured runtime state is stored in `.hachi/db/hachi.sqlite`.
 - Discord setup still requires enabling Message Content Intent and inviting the bot with `bot` and `applications.commands` scopes.

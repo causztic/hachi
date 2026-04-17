@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildLlamaServerCommand,
-  getDefaultModel
+  getDefaultModel,
+  resolveServerBinary
 } from "../../src/llm/model-registry";
 
 describe("getDefaultModel", () => {
@@ -32,5 +33,17 @@ describe("buildLlamaServerCommand", () => {
       "--model",
       "/repo/.hachi/models/Qwen3-14B-Q5_K_M.gguf"
     ]);
+  });
+});
+
+describe("resolveServerBinary", () => {
+  it("resolves repo-relative launcher paths from the repo root", () => {
+    expect(resolveServerBinary("scripts/llama-server-wsl", "/repo")).toBe(
+      "/repo/scripts/llama-server-wsl"
+    );
+  });
+
+  it("leaves bare command names unchanged", () => {
+    expect(resolveServerBinary("llama-server", "/repo")).toBe("llama-server");
   });
 });

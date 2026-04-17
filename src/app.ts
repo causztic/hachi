@@ -16,6 +16,7 @@ import { loadEnvConfig } from "./config/env";
 import { loadPromptBundle, type PromptBundle } from "./config/prompts";
 import { createRuntimePaths, type RuntimePaths } from "./config/runtime-paths";
 import { ensureDir } from "./util/fs";
+import { resolveServerBinary } from "./llm/model-registry";
 
 export type ManagedMessageHandlerDependencies = {
   chatClient: {
@@ -140,7 +141,10 @@ export async function createApp() {
     model: defaultConfig.llm.defaultModel,
     modelsDir: runtimePaths.modelsDir,
     port: 8080,
-    serverBinary: envConfig.llamaServerBin
+    serverBinary: resolveServerBinary(
+      envConfig.llamaServerBin ?? defaultConfig.llm.serverBinary,
+      envConfig.repoRoot
+    )
   });
   const chatClient = createLlamaChatClient({
     baseUrl: "http://127.0.0.1:8080",
