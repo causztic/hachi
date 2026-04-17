@@ -1,0 +1,35 @@
+import { describe, expect, it } from "vitest";
+import {
+  buildLlamaServerCommand,
+  getDefaultModel
+} from "../../src/llm/model-registry";
+
+describe("getDefaultModel", () => {
+  it("returns the shipped qwen3 14b quantized gguf", () => {
+    const model = getDefaultModel();
+
+    expect(model.filename).toBe("Qwen3-14B-Q4_K_M.gguf");
+    expect(model.url).toContain("bartowski/Qwen_Qwen3-14B-GGUF");
+  });
+});
+
+describe("buildLlamaServerCommand", () => {
+  it("builds a llama-server command for the configured model path", () => {
+    const command = buildLlamaServerCommand({
+      host: "127.0.0.1",
+      modelPath: "/repo/.hachi/models/Qwen3-14B-Q4_K_M.gguf",
+      port: 8080,
+      serverBinary: "llama-server"
+    });
+
+    expect(command.command).toBe("llama-server");
+    expect(command.args).toEqual([
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "8080",
+      "--model",
+      "/repo/.hachi/models/Qwen3-14B-Q4_K_M.gguf"
+    ]);
+  });
+});
