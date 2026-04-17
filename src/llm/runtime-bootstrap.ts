@@ -38,6 +38,15 @@ type OciImageManifest = {
   mediaType?: string;
 };
 
+class RegistryRequestError extends Error {
+  constructor(
+    readonly status: number,
+    readonly url: string
+  ) {
+    super(`registry request failed: ${status} ${url}`);
+  }
+}
+
 export type OfficialLlamaRuntimeSource = {
   platform: {
     architecture: string;
@@ -116,7 +125,7 @@ async function fetchRegistryJson(
         });
 
   if (!response.ok) {
-    throw new Error(`registry request failed: ${response.status} ${url}`);
+    throw new RegistryRequestError(response.status, url);
   }
 
   return await response.json();
@@ -138,11 +147,23 @@ async function resolveRuntimeManifest(input: {
     authorization: `Bearer ${input.token}`
   };
   const manifestUrl = `${input.source.registry}/v2/${input.source.repository}/manifests/${input.source.tag}`;
-  const initialManifest = await fetchRegistryJson(
-    manifestUrl,
-    registryHeaders,
-    input.fetchImpl
-  ) as OciImageIndex | OciImageManifest;
+  let initialManifest: OciImageIndex | OciImageManifest;
+
+  try {
+    initialManifest = await fetchRegistryJson(
+      manifestUrl,
+      registryHeaders,
+      input.fetchImpl
+    ) as OciImageIndex | OciImageManifest;
+  } catch (error) {
+    if (error instanceof RegistryRequestError && error.status === 404) {
+      throw new Error(
+        `official llama runtime tag was not found: ${input.source.registry}/${input.source.repository}:${input.source.tag}`
+      );
+    }
+
+    throw error;
+  }
 
   if (isImageManifest(initialManifest)) {
     return initialManifest;

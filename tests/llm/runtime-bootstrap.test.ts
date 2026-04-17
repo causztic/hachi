@@ -35,7 +35,7 @@ describe("ensureOfficialLlamaRuntime", () => {
             },
             registry: "https://ghcr.io",
             repository: "ggml-org/llama.cpp",
-            tag: "server-cuda-b8827"
+            tag: "server-cuda-b7212"
           },
           tmpDir: join(tempRoot, "tmp")
         },
@@ -112,7 +112,7 @@ describe("ensureOfficialLlamaRuntime", () => {
             },
             registry: "https://ghcr.io",
             repository: "ggml-org/llama.cpp",
-            tag: "server-cuda-b8827"
+            tag: "server-cuda-b7212"
           },
           tmpDir
         },
@@ -128,7 +128,7 @@ describe("ensureOfficialLlamaRuntime", () => {
       );
       expect(fetchImpl).toHaveBeenNthCalledWith(
         2,
-        "https://ghcr.io/v2/ggml-org/llama.cpp/manifests/server-cuda-b8827",
+        "https://ghcr.io/v2/ggml-org/llama.cpp/manifests/server-cuda-b7212",
         expect.objectContaining({
           headers: expect.any(Object)
         })
@@ -177,7 +177,7 @@ describe("ensureOfficialLlamaRuntime", () => {
               },
               registry: "https://ghcr.io",
               repository: "ggml-org/llama.cpp",
-              tag: "server-cuda-b8827"
+              tag: "server-cuda-b7212"
             },
             tmpDir
           },
@@ -187,6 +187,53 @@ describe("ensureOfficialLlamaRuntime", () => {
           }
         )
       ).rejects.toThrow(/failed to bootstrap official llama runtime/i);
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("surfaces a clear error when the configured official tag does not exist", async () => {
+    const tempRoot = await mkdtemp(join(tmpdir(), "hachi-runtime-bootstrap-"));
+    const rootfsDir = join(tempRoot, "rootfs");
+    const tmpDir = join(tempRoot, "tmp");
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        createJsonResponse({
+          token: "token-123"
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ errors: [] }), {
+          headers: {
+            "content-type": "application/json"
+          },
+          status: 404
+        })
+      );
+
+    try {
+      await expect(
+        ensureOfficialLlamaRuntime(
+          {
+            rootfsDir,
+            serverBinaryRelativePath: "app/llama-server",
+            source: {
+              platform: {
+                architecture: "amd64",
+                os: "linux"
+              },
+              registry: "https://ghcr.io",
+              repository: "ggml-org/llama.cpp",
+              tag: "server-cuda-b9999"
+            },
+            tmpDir
+          },
+          {
+            fetchImpl
+          }
+        )
+      ).rejects.toThrow(/official llama runtime tag was not found/i);
     } finally {
       await rm(tempRoot, { force: true, recursive: true });
     }

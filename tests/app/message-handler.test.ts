@@ -16,7 +16,7 @@ const defaultLlmConfig = {
     },
     registry: "https://ghcr.io",
     repository: "ggml-org/llama.cpp",
-    tag: "server-cuda-b8827"
+    tag: "server-cuda-b7212"
   },
   serverBinary: "llama-server"
 };

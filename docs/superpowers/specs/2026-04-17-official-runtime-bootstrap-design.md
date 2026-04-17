@@ -9,7 +9,7 @@ Let `npm run dev` bootstrap a missing local WSL llama runtime automatically from
 Hachi should use an official prebuilt `llama.cpp` source only.
 
 - Default runtime source: `ghcr.io/ggml-org/llama.cpp`
-- Default pinned tag: `server-cuda-b8827`
+- Default pinned tag: `server-cuda-b7212`
 - Platform target: `linux/amd64`
 
 The pinned tag should live in committed config so future bumps are explicit and reviewable.
