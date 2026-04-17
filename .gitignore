@@ -1,2 +1,8 @@
 # OpenACP local workspace (contains secrets)
 .openacp
+.worktrees/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
