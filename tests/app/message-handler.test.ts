@@ -21,8 +21,8 @@ describe("createManagedMessageHandler", () => {
         },
         llm: {
           defaultModel: {
-            filename: "Qwen3-14B-Q4_K_M.gguf",
-            name: "qwen3-14b-q4-k-m",
+            filename: "Qwen3-14B-Q5_K_M.gguf",
+            name: "qwen3-14b-q5-k-m",
             url: "https://example.invalid/model.gguf"
           },
           serverBinary: "llama-server"
@@ -32,7 +32,7 @@ describe("createManagedMessageHandler", () => {
         }
       },
       promptBundle: {
-        persona: "You are Hachi.",
+        persona: "You are Hachi, a young shrine-keeper bee familiar.",
         router: "Prefer codex only for coding work."
       },
       repoRoot: "/repo",
@@ -89,8 +89,8 @@ describe("createManagedMessageHandler", () => {
         },
         llm: {
           defaultModel: {
-            filename: "Qwen3-14B-Q4_K_M.gguf",
-            name: "qwen3-14b-q4-k-m",
+            filename: "Qwen3-14B-Q5_K_M.gguf",
+            name: "qwen3-14b-q5-k-m",
             url: "https://example.invalid/model.gguf"
           },
           serverBinary: "llama-server"
@@ -100,7 +100,7 @@ describe("createManagedMessageHandler", () => {
         }
       },
       promptBundle: {
-        persona: "You are Hachi.",
+        persona: "You are Hachi, a young shrine-keeper bee familiar.",
         router: "Prefer codex only for coding work."
       },
       repoRoot: "/repo",

@@ -1,5 +1,6 @@
 # OpenACP local workspace (contains secrets)
 .openacp
+.superpowers/
 .worktrees/
 .hachi/
 dist/
