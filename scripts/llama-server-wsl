@@ -5,15 +5,27 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RUNTIME_ROOT="${REPO_ROOT}/.hachi/bin/llama-server-cuda-linux/rootfs"
 SERVER_BIN="${RUNTIME_ROOT}/app/llama-server"
-CUDA_LIB_DIR="${RUNTIME_ROOT}/usr/local/cuda-12.8/targets/x86_64-linux/lib"
+CUDA_LIB_DIR="$(find "${RUNTIME_ROOT}/usr/local" -maxdepth 4 -type d -path '*/targets/x86_64-linux/lib' | sort | head -n 1)"
+HOST_LD_LIBRARY_PATH="${LD_LIBRARY_PATH-}"
+SUPPORT_LIB_DIR="${REPO_ROOT}/.hachi/bin/llama-server-cuda-linux/wsl-libs"
 
 if [[ ! -x "${SERVER_BIN}" ]]; then
   echo "missing llama-server runtime at ${SERVER_BIN}" >&2
   exit 1
 fi
 
+mkdir -p "${SUPPORT_LIB_DIR}"
+if [[ -e "${RUNTIME_ROOT}/usr/lib/x86_64-linux-gnu/libgomp.so.1" ]]; then
+  ln -sf "${RUNTIME_ROOT}/usr/lib/x86_64-linux-gnu/libgomp.so.1" "${SUPPORT_LIB_DIR}/libgomp.so.1"
+fi
+
 # Keep the runtime's app and CUDA libraries ahead of the host path, but do not
-# inject the container's system libc into the host process. That mix crashes
-# immediately under WSL when the server boots.
-export LD_LIBRARY_PATH="${CUDA_LIB_DIR}:${RUNTIME_ROOT}/app:/usr/lib/wsl/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+# inject the container's full system libc directory into the host process. Only
+# surface the missing non-glibc runtime bits that the bundled ggml backends need.
+LAUNCHER_LD_LIBRARY_PATH="${SUPPORT_LIB_DIR}:${RUNTIME_ROOT}/app:/usr/lib/wsl/lib"
+if [[ -n "${CUDA_LIB_DIR}" ]]; then
+  LAUNCHER_LD_LIBRARY_PATH="${SUPPORT_LIB_DIR}:${CUDA_LIB_DIR}:${RUNTIME_ROOT}/app:/usr/lib/wsl/lib"
+fi
+
+export LD_LIBRARY_PATH="${LAUNCHER_LD_LIBRARY_PATH}${HOST_LD_LIBRARY_PATH:+:${HOST_LD_LIBRARY_PATH}}"
 exec "${SERVER_BIN}" "$@"
