@@ -1,6 +1,9 @@
 # OpenACP local workspace (contains secrets)
 .openacp
 .worktrees/
+.hachi/
+dist/
+node_modules/
 
 # Beads / Dolt files (added by bd init)
 .dolt/
