@@ -31,6 +31,11 @@ type ManagedLlamaServerDependencies = {
   }) => Promise<void>;
 };
 
+type ExistingServerProbeResult =
+  | { kind: "mismatch"; modelIds: string[] }
+  | { kind: "reuse" }
+  | { kind: "spawn" };
+
 async function waitForServerReady(input: {
   host: string;
   port: number;
@@ -64,6 +69,54 @@ async function waitForServerReady(input: {
   throw new Error(
     `timed out waiting for llama-server on ${input.host}:${input.port}`
   );
+}
+
+async function probeExistingServer(input: {
+  baseUrl: string;
+  fetchImpl: typeof fetch;
+  modelName: string;
+}): Promise<ExistingServerProbeResult> {
+  try {
+    const response = await input.fetchImpl(`${input.baseUrl}/v1/models`);
+
+    if (!response.ok) {
+      return {
+        kind: "reuse"
+      };
+    }
+
+    const payload = (await response.json()) as {
+      data?: Array<{
+        id?: unknown;
+      }>;
+    };
+    const modelIds = Array.isArray(payload.data)
+      ? payload.data
+          .map((entry) => (typeof entry?.id === "string" ? entry.id : null))
+          .filter((entry): entry is string => entry !== null)
+      : [];
+
+    if (modelIds.includes(input.modelName)) {
+      return {
+        kind: "reuse"
+      };
+    }
+
+    if (modelIds.length > 0) {
+      return {
+        kind: "mismatch",
+        modelIds
+      };
+    }
+
+    return {
+      kind: "reuse"
+    };
+  } catch {
+    return {
+      kind: "spawn"
+    };
+  }
 }
 
 function watchForStartupFailure(input: {
@@ -126,6 +179,7 @@ export function createManagedLlamaServer(
   dependencies: ManagedLlamaServerDependencies = {}
 ) {
   let processRef: ChildProcessWithoutNullStreams | null = null;
+  let ownsProcess = false;
   const statImpl = dependencies.stat ?? stat;
   const ensureDirImpl = dependencies.ensureDir ?? ensureDir;
   const fetchImpl = dependencies.fetchImpl ?? fetch;
@@ -169,6 +223,24 @@ export function createManagedLlamaServer(
       }
     },
     async start() {
+      const existingServer = await probeExistingServer({
+        baseUrl: `http://${config.host}:${config.port}`,
+        fetchImpl,
+        modelName: config.model.name
+      });
+
+      if (existingServer.kind === "reuse") {
+        ownsProcess = false;
+        processRef = null;
+        return;
+      }
+
+      if (existingServer.kind === "mismatch") {
+        throw new Error(
+          `existing llama-server model mismatch: expected ${config.model.name}, found ${existingServer.modelIds.join(", ")}`
+        );
+      }
+
       const resolvedModelPath = await this.ensureModel();
       const command = buildLlamaServerCommand({
         host: config.host,
@@ -180,6 +252,7 @@ export function createManagedLlamaServer(
       processRef = spawnImpl(command.command, command.args, {
         stdio: "pipe"
       });
+      ownsProcess = true;
 
       let startupOutput = "";
       const appendOutput = (chunk: Buffer) => {
@@ -214,14 +287,18 @@ export function createManagedLlamaServer(
       } catch (error) {
         processRef.kill("SIGTERM");
         processRef = null;
+        ownsProcess = false;
         throw error;
       } finally {
         startupFailure.dispose();
       }
     },
     stop() {
-      processRef?.kill("SIGTERM");
+      if (ownsProcess) {
+        processRef?.kill("SIGTERM");
+      }
       processRef = null;
+      ownsProcess = false;
     }
   };
 }
