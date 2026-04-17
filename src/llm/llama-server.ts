@@ -2,7 +2,7 @@ import { createWriteStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { connect } from "node:net";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { ensureDir } from "../util/fs";
 import {
@@ -81,7 +81,9 @@ async function waitForServerReady(input: {
 async function probeExistingServer(input: {
   baseUrl: string;
   fetchImpl: typeof fetch;
+  modelFilename: string;
   modelName: string;
+  modelPath: string;
 }): Promise<ExistingServerProbeResult> {
   try {
     const response = await input.fetchImpl(`${input.baseUrl}/v1/models`);
@@ -102,8 +104,19 @@ async function probeExistingServer(input: {
           .map((entry) => (typeof entry?.id === "string" ? entry.id : null))
           .filter((entry): entry is string => entry !== null)
       : [];
+    const compatibleModelIds = new Set([
+      input.modelFilename,
+      input.modelName,
+      input.modelPath
+    ]);
 
-    if (modelIds.includes(input.modelName)) {
+    if (
+      modelIds.some(
+        (modelId) =>
+          compatibleModelIds.has(modelId) ||
+          compatibleModelIds.has(basename(modelId))
+      )
+    ) {
       return {
         kind: "reuse"
       };
@@ -246,7 +259,9 @@ export function createManagedLlamaServer(
       const existingServer = await probeExistingServer({
         baseUrl: `http://${config.host}:${config.port}`,
         fetchImpl,
-        modelName: config.model.name
+        modelFilename: config.model.filename,
+        modelName: config.model.name,
+        modelPath
       });
 
       if (existingServer.kind === "reuse") {

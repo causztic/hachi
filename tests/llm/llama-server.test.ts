@@ -96,6 +96,57 @@ describe("createManagedLlamaServer", () => {
     }
   });
 
+  it("reuses an existing server when it reports the loaded model as a file path", async () => {
+    const { modelsDir, tempRoot } = await createTempModelDir();
+    const spawnImpl = vi.fn();
+    const waitForReady = vi.fn();
+    const fetchImpl = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: [
+            {
+              id: join(modelsDir, "Qwen3-14B-Q5_K_M.gguf")
+            }
+          ]
+        }),
+        {
+          headers: {
+            "content-type": "application/json"
+          },
+          status: 200
+        }
+      )
+    );
+    const llamaServer = createManagedLlamaServer(
+      {
+        host: "127.0.0.1",
+        model: {
+          filename: "Qwen3-14B-Q5_K_M.gguf",
+          name: "qwen3-14b-q5-k-m",
+          url: "https://example.invalid/model.gguf"
+        },
+        modelsDir,
+        port: 8080,
+        serverBinary: "llama-server"
+      },
+      {
+        fetchImpl,
+        spawn: spawnImpl,
+        waitForReady
+      }
+    );
+
+    try {
+      await llamaServer.start();
+
+      expect(spawnImpl).not.toHaveBeenCalled();
+      expect(waitForReady).not.toHaveBeenCalled();
+    } finally {
+      llamaServer.stop();
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+
   it("rejects startup when an existing server explicitly reports a different model", async () => {
     const { modelsDir, tempRoot } = await createTempModelDir();
     const spawnImpl = vi.fn();
