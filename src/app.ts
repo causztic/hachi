@@ -19,6 +19,7 @@ import {
   inboundPromptRefusalMessage,
   shouldRefuseInboundPrompt
 } from "./safety/inbound-prompt-guard";
+import { validateOutboundResponse } from "./safety/outbound-response-validator";
 import { redactSecretsInText } from "./safety/secret-redaction";
 import { ensureDir } from "./util/fs";
 import { resolveServerBinary } from "./llm/model-registry";
@@ -153,7 +154,7 @@ export function createManagedMessageHandler(
       }
     ]);
 
-    await message.reply(reply);
+    await message.reply(validateOutboundResponse(reply).content);
   };
 }
 
