@@ -15,6 +15,10 @@ import { loadDefaultConfig, type DefaultConfig } from "./config/defaults";
 import { loadEnvConfig } from "./config/env";
 import { loadPromptBundle, type PromptBundle } from "./config/prompts";
 import { createRuntimePaths, type RuntimePaths } from "./config/runtime-paths";
+import {
+  inboundPromptRefusalMessage,
+  shouldRefuseInboundPrompt
+} from "./safety/inbound-prompt-guard";
 import { ensureDir } from "./util/fs";
 import { resolveServerBinary } from "./llm/model-registry";
 
@@ -119,6 +123,11 @@ export function createManagedMessageHandler(
           : `Codex run ${runId} failed. Log: ${result.logPath}`
       );
 
+      return;
+    }
+
+    if (shouldRefuseInboundPrompt(message.content)) {
+      await message.reply(inboundPromptRefusalMessage);
       return;
     }
 
