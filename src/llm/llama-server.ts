@@ -29,14 +29,15 @@ export function createManagedLlamaServer(config: ManagedLlamaServerConfig) {
       } catch {
         await ensureDir(config.modelsDir);
         const response = await fetch(config.model.url);
+        const responseBody = response.body;
 
-        if (!response.ok || !response.body) {
+        if (!response.ok || !responseBody) {
           throw new Error(`model download failed: ${response.status}`);
         }
 
         await new Promise<void>((resolve, reject) => {
           const file = createWriteStream(modelPath);
-          response.body.pipeTo(
+          responseBody.pipeTo(
             new WritableStream({
               abort(reason) {
                 reject(reason);

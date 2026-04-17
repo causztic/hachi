@@ -44,7 +44,7 @@ export function createDiscordBot(
   });
 
   async function resolveTargetChannel(
-    message: Message
+    message: Message<true>
   ): Promise<PublicThreadChannel<false> | TextChannel | null> {
     const hasMention = client.user ? message.mentions.has(client.user.id) : false;
     const existingThreadId = message.channel.isThread() ? message.channel.id : null;
@@ -55,7 +55,7 @@ export function createDiscordBot(
     });
 
     if (decision.kind === "use-current-thread") {
-      return message.channel;
+      return message.channel as PublicThreadChannel<false> | TextChannel;
     }
 
     if (
