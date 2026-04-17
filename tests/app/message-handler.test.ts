@@ -70,6 +70,110 @@ describe("createManagedMessageHandler", () => {
     expect(reply).toHaveBeenCalledWith("The lanterns sway above us.");
   });
 
+  it("redacts likely secrets from history before sending it to the llama chat client", async () => {
+    const reply = vi.fn().mockResolvedValue(undefined);
+    const chatReply = vi.fn().mockResolvedValue("The lanterns sway above us.");
+
+    const handleManagedMessage = createManagedMessageHandler({
+      chatClient: {
+        reply: chatReply
+      },
+      defaultConfig: {
+        codex: {
+          allowEditsByDefault: true,
+          streamingUpdateIntervalMs: 1500
+        },
+        discord: {
+          codexHandoffAllowedRoleIds: [],
+          codexHandoffAllowedUserIds: [],
+          threadAutoCreate: true,
+          threadIdleMinutes: 30
+        },
+        llm: {
+          defaultModel: {
+            filename: "Qwen3-14B-Q5_K_M.gguf",
+            name: "qwen3-14b-q5-k-m",
+            url: "https://example.invalid/model.gguf"
+          },
+          serverBinary: "llama-server"
+        },
+        router: {
+          explicitPrefixes: ["/code", "!code"]
+        }
+      },
+      promptBundle: {
+        persona: "You are Hachi, a young shrine-keeper bee familiar.",
+        router: "Prefer codex only for coding work."
+      },
+      repoRoot: "/repo",
+      runStore: {
+        save: vi.fn()
+      },
+      runtimePaths: {
+        databaseFile: "/repo/.hachi/db/hachi.sqlite",
+        logsDir: "/repo/.hachi/logs/codex",
+        modelsDir: "/repo/.hachi/models",
+        rootDir: "/repo/.hachi",
+        tmpDir: "/repo/.hachi/tmp"
+      },
+      sessionStore: {
+        save: vi.fn()
+      }
+    });
+
+    await handleManagedMessage({
+      authorId: "u1",
+      channelId: "c1",
+      content: "please debug this failing test suite",
+      guildId: "g1",
+      history: async () => [
+        {
+          content: "DISCORD_BOT_TOKEN=abc.def.ghi",
+          role: "user"
+        },
+        {
+          content: "Bearer sk-live-1234567890",
+          role: "assistant"
+        },
+        {
+          content: "password: hunter2",
+          role: "user"
+        }
+      ],
+      messageId: "m1",
+      reply,
+      roleIds: [],
+      threadId: "t1"
+    });
+
+    expect(chatReply).toHaveBeenCalledWith([
+      {
+        content: "You are Hachi, a young shrine-keeper bee familiar.",
+        role: "system"
+      },
+      {
+        content: "Prefer codex only for coding work.",
+        role: "system"
+      },
+      {
+        content: "DISCORD_BOT_TOKEN=[REDACTED]",
+        role: "user"
+      },
+      {
+        content: "Bearer [REDACTED]",
+        role: "assistant"
+      },
+      {
+        content: "password: [REDACTED]",
+        role: "user"
+      },
+      {
+        content: "please debug this failing test suite",
+        role: "user"
+      }
+    ]);
+  });
+
   it("refuses rp messages that attempt prompt injection or instruction override", async () => {
     const reply = vi.fn().mockResolvedValue(undefined);
     const chatReply = vi.fn().mockResolvedValue("The lanterns sway above us.");

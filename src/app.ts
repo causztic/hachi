@@ -19,6 +19,7 @@ import {
   inboundPromptRefusalMessage,
   shouldRefuseInboundPrompt
 } from "./safety/inbound-prompt-guard";
+import { redactSecretsInText } from "./safety/secret-redaction";
 import { ensureDir } from "./util/fs";
 import { resolveServerBinary } from "./llm/model-registry";
 
@@ -132,6 +133,10 @@ export function createManagedMessageHandler(
     }
 
     const history = await message.history();
+    const redactedHistory = history.map((entry) => ({
+      content: redactSecretsInText(entry.content),
+      role: entry.role
+    }));
     const reply = await dependencies.chatClient.reply([
       {
         content: dependencies.promptBundle.persona,
@@ -141,7 +146,7 @@ export function createManagedMessageHandler(
         content: dependencies.promptBundle.router,
         role: "system"
       },
-      ...history,
+      ...redactedHistory,
       {
         content: message.content,
         role: "user"
