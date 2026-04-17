@@ -2,6 +2,7 @@ import { join } from "node:path";
 
 export type RuntimePaths = {
   databaseFile: string;
+  llamaRuntimeRootfsDir: string;
   logsDir: string;
   modelsDir: string;
   rootDir: string;
@@ -13,6 +14,12 @@ export function createRuntimePaths(repoRoot: string): RuntimePaths {
 
   return {
     databaseFile: join(rootDir, "db", "hachi.sqlite"),
+    llamaRuntimeRootfsDir: join(
+      rootDir,
+      "bin",
+      "llama-server-cuda-linux",
+      "rootfs"
+    ),
     logsDir: join(rootDir, "logs", "codex"),
     modelsDir: join(rootDir, "models"),
     rootDir,

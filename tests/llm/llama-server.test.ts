@@ -174,6 +174,7 @@ describe("createManagedLlamaServer", () => {
   it("waits for the readiness check before resolving start", async () => {
     const { modelsDir, tempRoot } = await createTempModelDir();
     const childProcess = new FakeChildProcess();
+    const ensureRuntime = vi.fn().mockResolvedValue(undefined);
     let releaseReady!: () => void;
     const waitForReady = vi.fn(
       () =>
@@ -194,6 +195,7 @@ describe("createManagedLlamaServer", () => {
         serverBinary: "llama-server"
       },
       {
+        ensureRuntime,
         fetchImpl: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
         spawn: vi.fn(() => childProcess as never),
         waitForReady
@@ -209,6 +211,7 @@ describe("createManagedLlamaServer", () => {
       expect(waitForReady).toHaveBeenCalledOnce();
     });
 
+    expect(ensureRuntime).toHaveBeenCalledOnce();
     expect(resolved).toBe(false);
 
     try {
@@ -223,6 +226,7 @@ describe("createManagedLlamaServer", () => {
   it("rejects start when the child exits before the readiness check completes", async () => {
     const { modelsDir, tempRoot } = await createTempModelDir();
     const childProcess = new FakeChildProcess();
+    const ensureRuntime = vi.fn().mockResolvedValue(undefined);
     const waitForReady = vi.fn(
       () => new Promise<void>(() => undefined)
     );
@@ -239,6 +243,7 @@ describe("createManagedLlamaServer", () => {
         serverBinary: "llama-server"
       },
       {
+        ensureRuntime,
         fetchImpl: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
         spawn: vi.fn(() => childProcess as never),
         waitForReady
@@ -265,6 +270,7 @@ describe("createManagedLlamaServer", () => {
   it("stops only the managed server process it started itself", async () => {
     const { modelsDir, tempRoot } = await createTempModelDir();
     const childProcess = new FakeChildProcess();
+    const ensureRuntime = vi.fn().mockResolvedValue(undefined);
     let releaseReady!: () => void;
     const waitForReady = vi.fn(
       () =>
@@ -285,6 +291,7 @@ describe("createManagedLlamaServer", () => {
         serverBinary: "llama-server"
       },
       {
+        ensureRuntime,
         fetchImpl: vi.fn().mockRejectedValue(new TypeError("fetch failed")),
         spawn: vi.fn(() => childProcess as never),
         waitForReady

@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import type { OfficialLlamaRuntimeSource } from "../llm/runtime-bootstrap";
 
 export type DefaultConfig = {
   codex: {
@@ -17,6 +18,7 @@ export type DefaultConfig = {
       name: string;
       url: string;
     };
+    runtimeSource: OfficialLlamaRuntimeSource;
     serverBinary: string;
   };
   router: {

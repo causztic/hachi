@@ -13,6 +13,11 @@ describe("loadDefaultConfig", () => {
     expect(config.llm.defaultModel.filename).toBe("Qwen3-14B-Q5_K_M.gguf");
     expect(config.llm.defaultModel.name).toBe("qwen3-14b-q5-k-m");
     expect(config.llm.defaultModel.url).toContain("Qwen/Qwen3-14B-GGUF");
+    expect(config.llm.runtimeSource.registry).toBe("https://ghcr.io");
+    expect(config.llm.runtimeSource.repository).toBe("ggml-org/llama.cpp");
+    expect(config.llm.runtimeSource.tag).toBe("server-cuda-b8827");
+    expect(config.llm.runtimeSource.platform.architecture).toBe("amd64");
+    expect(config.llm.runtimeSource.platform.os).toBe("linux");
     expect(config.llm.serverBinary).toBe("scripts/llama-server-wsl");
   });
 });

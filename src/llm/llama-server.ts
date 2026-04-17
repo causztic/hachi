@@ -9,17 +9,23 @@ import {
   buildLlamaServerCommand,
   type DefaultModel
 } from "./model-registry";
+import {
+  ensureOfficialLlamaRuntime,
+  type OfficialLlamaRuntimeConfig
+} from "./runtime-bootstrap";
 
 export type ManagedLlamaServerConfig = {
   host: string;
   model: DefaultModel;
   modelsDir: string;
   port: number;
+  runtime?: OfficialLlamaRuntimeConfig;
   serverBinary: string;
 };
 
 type ManagedLlamaServerDependencies = {
   ensureDir?: typeof ensureDir;
+  ensureRuntime?: () => Promise<void>;
   fetchImpl?: typeof fetch;
   sleep?: typeof sleep;
   spawn?: typeof spawn;
@@ -185,6 +191,11 @@ export function createManagedLlamaServer(
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const spawnImpl = dependencies.spawn ?? spawn;
   const sleepImpl = dependencies.sleep ?? sleep;
+  const ensureRuntime =
+    dependencies.ensureRuntime ??
+    (config.runtime
+      ? () => ensureOfficialLlamaRuntime(config.runtime as OfficialLlamaRuntimeConfig)
+      : async () => undefined);
 
   const modelPath = join(config.modelsDir, config.model.filename);
 
@@ -241,6 +252,7 @@ export function createManagedLlamaServer(
         );
       }
 
+      await ensureRuntime();
       const resolvedModelPath = await this.ensureModel();
       const command = buildLlamaServerCommand({
         host: config.host,

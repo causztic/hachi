@@ -3,6 +3,7 @@ import { dirname } from "node:path";
 import { createDiscordBot, type ManagedDiscordMessage } from "./discord/discord-bot";
 import { createManagedLlamaServer } from "./llm/llama-server";
 import { createLlamaChatClient } from "./llm/llama-chat";
+import { type OfficialLlamaRuntimeConfig } from "./llm/runtime-bootstrap";
 import { createDatabase } from "./persistence/database";
 import { createRunStore, type CodexRunRecord } from "./persistence/run-store";
 import {
@@ -181,6 +182,12 @@ export async function createApp() {
     model: defaultConfig.llm.defaultModel,
     modelsDir: runtimePaths.modelsDir,
     port: 8080,
+    runtime: {
+      rootfsDir: runtimePaths.llamaRuntimeRootfsDir,
+      serverBinaryRelativePath: "app/llama-server",
+      source: defaultConfig.llm.runtimeSource,
+      tmpDir: runtimePaths.tmpDir
+    } satisfies OfficialLlamaRuntimeConfig,
     serverBinary: resolveServerBinary(
       envConfig.llamaServerBin ?? defaultConfig.llm.serverBinary,
       envConfig.repoRoot

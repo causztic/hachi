@@ -35,7 +35,7 @@ export HACHI_ALLOWED_GUILD_IDS=...
 npm run dev
 ```
 
-On first start, the bot downloads the default GGUF model into `.hachi/models/` and then starts the WSL-local `scripts/llama-server-wsl` launcher.
+On first start, the bot bootstraps the pinned official `ggml-org/llama.cpp:server-cuda-b8827` runtime into `.hachi/bin/llama-server-cuda-linux/rootfs`, downloads the default GGUF model into `.hachi/models/`, and then starts the WSL-local `scripts/llama-server-wsl` launcher.
 
 ## Runtime layout
 

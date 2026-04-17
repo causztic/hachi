@@ -3,6 +3,33 @@ import { createManagedMessageHandler } from "../../src/app";
 import { inboundPromptRefusalMessage } from "../../src/safety/inbound-prompt-guard";
 import { outboundResponseFallbackMessage } from "../../src/safety/outbound-response-validator";
 
+const defaultLlmConfig = {
+  defaultModel: {
+    filename: "Qwen3-14B-Q5_K_M.gguf",
+    name: "qwen3-14b-q5-k-m",
+    url: "https://example.invalid/model.gguf"
+  },
+  runtimeSource: {
+    platform: {
+      architecture: "amd64",
+      os: "linux"
+    },
+    registry: "https://ghcr.io",
+    repository: "ggml-org/llama.cpp",
+    tag: "server-cuda-b8827"
+  },
+  serverBinary: "llama-server"
+};
+
+const defaultRuntimePaths = {
+  databaseFile: "/repo/.hachi/db/hachi.sqlite",
+  llamaRuntimeRootfsDir: "/repo/.hachi/bin/llama-server-cuda-linux/rootfs",
+  logsDir: "/repo/.hachi/logs/codex",
+  modelsDir: "/repo/.hachi/models",
+  rootDir: "/repo/.hachi",
+  tmpDir: "/repo/.hachi/tmp"
+};
+
 describe("createManagedMessageHandler", () => {
   it("routes rp messages to the llama chat client", async () => {
     const reply = vi.fn().mockResolvedValue(undefined);
@@ -23,14 +50,7 @@ describe("createManagedMessageHandler", () => {
           threadAutoCreate: true,
           threadIdleMinutes: 30
         },
-        llm: {
-          defaultModel: {
-            filename: "Qwen3-14B-Q5_K_M.gguf",
-            name: "qwen3-14b-q5-k-m",
-            url: "https://example.invalid/model.gguf"
-          },
-          serverBinary: "llama-server"
-        },
+        llm: defaultLlmConfig,
         router: {
           explicitPrefixes: ["/code", "!code"]
         }
@@ -43,13 +63,7 @@ describe("createManagedMessageHandler", () => {
       runStore: {
         save: vi.fn()
       },
-      runtimePaths: {
-        databaseFile: "/repo/.hachi/db/hachi.sqlite",
-        logsDir: "/repo/.hachi/logs/codex",
-        modelsDir: "/repo/.hachi/models",
-        rootDir: "/repo/.hachi",
-        tmpDir: "/repo/.hachi/tmp"
-      },
+      runtimePaths: defaultRuntimePaths,
       sessionStore: {
         save: vi.fn()
       }
@@ -94,14 +108,7 @@ describe("createManagedMessageHandler", () => {
           threadAutoCreate: true,
           threadIdleMinutes: 30
         },
-        llm: {
-          defaultModel: {
-            filename: "Qwen3-14B-Q5_K_M.gguf",
-            name: "qwen3-14b-q5-k-m",
-            url: "https://example.invalid/model.gguf"
-          },
-          serverBinary: "llama-server"
-        },
+        llm: defaultLlmConfig,
         router: {
           explicitPrefixes: ["/code", "!code"]
         }
@@ -114,13 +121,7 @@ describe("createManagedMessageHandler", () => {
       runStore: {
         save: vi.fn()
       },
-      runtimePaths: {
-        databaseFile: "/repo/.hachi/db/hachi.sqlite",
-        logsDir: "/repo/.hachi/logs/codex",
-        modelsDir: "/repo/.hachi/models",
-        rootDir: "/repo/.hachi",
-        tmpDir: "/repo/.hachi/tmp"
-      },
+      runtimePaths: defaultRuntimePaths,
       sessionStore: {
         save: vi.fn()
       }
@@ -164,14 +165,7 @@ describe("createManagedMessageHandler", () => {
           threadAutoCreate: true,
           threadIdleMinutes: 30
         },
-        llm: {
-          defaultModel: {
-            filename: "Qwen3-14B-Q5_K_M.gguf",
-            name: "qwen3-14b-q5-k-m",
-            url: "https://example.invalid/model.gguf"
-          },
-          serverBinary: "llama-server"
-        },
+        llm: defaultLlmConfig,
         router: {
           explicitPrefixes: ["/code", "!code"]
         }
@@ -184,13 +178,7 @@ describe("createManagedMessageHandler", () => {
       runStore: {
         save: vi.fn()
       },
-      runtimePaths: {
-        databaseFile: "/repo/.hachi/db/hachi.sqlite",
-        logsDir: "/repo/.hachi/logs/codex",
-        modelsDir: "/repo/.hachi/models",
-        rootDir: "/repo/.hachi",
-        tmpDir: "/repo/.hachi/tmp"
-      },
+      runtimePaths: defaultRuntimePaths,
       sessionStore: {
         save: vi.fn()
       }
@@ -268,14 +256,7 @@ describe("createManagedMessageHandler", () => {
           threadAutoCreate: true,
           threadIdleMinutes: 30
         },
-        llm: {
-          defaultModel: {
-            filename: "Qwen3-14B-Q5_K_M.gguf",
-            name: "qwen3-14b-q5-k-m",
-            url: "https://example.invalid/model.gguf"
-          },
-          serverBinary: "llama-server"
-        },
+        llm: defaultLlmConfig,
         router: {
           explicitPrefixes: ["/code", "!code"]
         }
@@ -288,13 +269,7 @@ describe("createManagedMessageHandler", () => {
       runStore: {
         save: vi.fn()
       },
-      runtimePaths: {
-        databaseFile: "/repo/.hachi/db/hachi.sqlite",
-        logsDir: "/repo/.hachi/logs/codex",
-        modelsDir: "/repo/.hachi/models",
-        rootDir: "/repo/.hachi",
-        tmpDir: "/repo/.hachi/tmp"
-      },
+      runtimePaths: defaultRuntimePaths,
       sessionStore: {
         save: vi.fn()
       }
@@ -335,14 +310,7 @@ describe("createManagedMessageHandler", () => {
           threadAutoCreate: true,
           threadIdleMinutes: 30
         },
-        llm: {
-          defaultModel: {
-            filename: "Qwen3-14B-Q5_K_M.gguf",
-            name: "qwen3-14b-q5-k-m",
-            url: "https://example.invalid/model.gguf"
-          },
-          serverBinary: "llama-server"
-        },
+        llm: defaultLlmConfig,
         router: {
           explicitPrefixes: ["/code", "!code"]
         }
@@ -356,13 +324,7 @@ describe("createManagedMessageHandler", () => {
       runStore: {
         save: vi.fn()
       },
-      runtimePaths: {
-        databaseFile: "/repo/.hachi/db/hachi.sqlite",
-        logsDir: "/repo/.hachi/logs/codex",
-        modelsDir: "/repo/.hachi/models",
-        rootDir: "/repo/.hachi",
-        tmpDir: "/repo/.hachi/tmp"
-      },
+      runtimePaths: defaultRuntimePaths,
       sessionStore: {
         save: vi.fn()
       }
@@ -410,14 +372,7 @@ describe("createManagedMessageHandler", () => {
           threadAutoCreate: true,
           threadIdleMinutes: 30
         },
-        llm: {
-          defaultModel: {
-            filename: "Qwen3-14B-Q5_K_M.gguf",
-            name: "qwen3-14b-q5-k-m",
-            url: "https://example.invalid/model.gguf"
-          },
-          serverBinary: "llama-server"
-        },
+        llm: defaultLlmConfig,
         router: {
           explicitPrefixes: ["/code", "!code"]
         }
@@ -431,13 +386,7 @@ describe("createManagedMessageHandler", () => {
       runStore: {
         save: runStoreSave
       },
-      runtimePaths: {
-        databaseFile: "/repo/.hachi/db/hachi.sqlite",
-        logsDir: "/repo/.hachi/logs/codex",
-        modelsDir: "/repo/.hachi/models",
-        rootDir: "/repo/.hachi",
-        tmpDir: "/repo/.hachi/tmp"
-      },
+      runtimePaths: defaultRuntimePaths,
       sessionStore: {
         save: vi.fn()
       }
@@ -492,14 +441,7 @@ describe("createManagedMessageHandler", () => {
           threadAutoCreate: true,
           threadIdleMinutes: 30
         },
-        llm: {
-          defaultModel: {
-            filename: "Qwen3-14B-Q5_K_M.gguf",
-            name: "qwen3-14b-q5-k-m",
-            url: "https://example.invalid/model.gguf"
-          },
-          serverBinary: "llama-server"
-        },
+        llm: defaultLlmConfig,
         router: {
           explicitPrefixes: ["/code", "!code"]
         }
@@ -513,13 +455,7 @@ describe("createManagedMessageHandler", () => {
       runStore: {
         save: runStoreSave
       },
-      runtimePaths: {
-        databaseFile: "/repo/.hachi/db/hachi.sqlite",
-        logsDir: "/repo/.hachi/logs/codex",
-        modelsDir: "/repo/.hachi/models",
-        rootDir: "/repo/.hachi",
-        tmpDir: "/repo/.hachi/tmp"
-      },
+      runtimePaths: defaultRuntimePaths,
       sessionStore: {
         save: vi.fn()
       }

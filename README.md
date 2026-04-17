@@ -26,11 +26,10 @@ The bot:
 npm install
 ```
 
-2. Make sure the local runtimes are available on `PATH`:
+2. Make sure `codex` is available on `PATH`:
 
 ```bash
 codex --version
-scripts/llama-server-wsl --version
 ```
 
 3. Set the required environment values:
@@ -49,7 +48,8 @@ npm run dev
 ## Notes
 
 - `scripts/llama-server-wsl` keeps the local model server inside WSL and loads the Linux CUDA runtime from `.hachi/bin/llama-server-cuda-linux/rootfs`.
-- The first `llama.cpp` startup downloads the default GGUF into `.hachi/models/`.
+- The first `llama.cpp` startup bootstraps the pinned official `ggml-org/llama.cpp:server-cuda-b8827` runtime into `.hachi/bin/llama-server-cuda-linux/rootfs`.
+- The first `llama.cpp` startup also downloads the default GGUF into `.hachi/models/`.
 - Set `HACHI_LLAMA_SERVER_BIN` only if you want to override the shipped WSL launcher.
 - Set `HACHI_REPO_ROOT` only if you start the bot from outside the repo root.
 - Codex run logs are written under `.hachi/logs/codex/`.
