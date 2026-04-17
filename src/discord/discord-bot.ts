@@ -12,11 +12,13 @@ import {
 } from "./thread-manager";
 
 export type ManagedDiscordMessage = {
+  authorId: string;
   channelId: string;
   content: string;
   guildId: string;
   history(): Promise<Array<{ content: string; role: "assistant" | "user" }>>;
   messageId: string;
+  roleIds: string[];
   reply(content: string): Promise<void>;
   threadId: string;
 };
@@ -92,6 +94,7 @@ export function createDiscordBot(
     const botUserId = client.user?.id ?? "";
 
     await handlers.onManagedMessage({
+      authorId: message.author.id,
       channelId: targetChannel.id,
       content: message.content,
       guildId: message.guildId,
@@ -109,6 +112,7 @@ export function createDiscordBot(
           }));
       },
       messageId: message.id,
+      roleIds: Array.from(message.member?.roles.cache.keys() ?? []),
       reply: async (content) => {
         await targetChannel.send(content);
       },

@@ -18,6 +18,9 @@ import { createRuntimePaths, type RuntimePaths } from "./config/runtime-paths";
 import { ensureDir } from "./util/fs";
 import { resolveServerBinary } from "./llm/model-registry";
 
+const codexHandoffDeniedMessage =
+  "Codex handoff is restricted to approved Discord users or roles.";
+
 export type ManagedMessageHandlerDependencies = {
   chatClient: {
     reply(messages: Array<{ content: string; role: "assistant" | "system" | "user" }>): Promise<string>;
@@ -42,6 +45,23 @@ export function createManagedMessageHandler(
   const runCodexImpl = dependencies.runCodexImpl ?? runCodex;
   const createRunId = dependencies.createRunId ?? randomUUID;
 
+  function canUseCodexHandoff(message: ManagedDiscordMessage): boolean {
+    const allowedUserIds =
+      dependencies.defaultConfig.discord.codexHandoffAllowedUserIds;
+    const allowedRoleIds =
+      dependencies.defaultConfig.discord.codexHandoffAllowedRoleIds;
+
+    if (allowedUserIds.length === 0 && allowedRoleIds.length === 0) {
+      return false;
+    }
+
+    if (allowedUserIds.includes(message.authorId)) {
+      return true;
+    }
+
+    return message.roleIds.some((roleId) => allowedRoleIds.includes(roleId));
+  }
+
   return async function handleManagedMessage(
     message: ManagedDiscordMessage
   ): Promise<void> {
@@ -59,6 +79,11 @@ export function createManagedMessageHandler(
     });
 
     if (route.target === "codex") {
+      if (!canUseCodexHandoff(message)) {
+        await message.reply(codexHandoffDeniedMessage);
+        return;
+      }
+
       const runId = createRunId();
       const startedAt = new Date().toISOString();
       dependencies.runStore.save({

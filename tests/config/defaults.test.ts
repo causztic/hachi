@@ -6,6 +6,8 @@ describe("loadDefaultConfig", () => {
     const config = await loadDefaultConfig();
 
     expect(config.discord.threadAutoCreate).toBe(true);
+    expect(config.discord.codexHandoffAllowedUserIds).toEqual([]);
+    expect(config.discord.codexHandoffAllowedRoleIds).toEqual([]);
     expect(config.router.explicitPrefixes).toEqual(["/code", "!code"]);
     expect(config.codex.allowEditsByDefault).toBe(true);
     expect(config.llm.defaultModel.filename).toBe("Qwen3-14B-Q5_K_M.gguf");

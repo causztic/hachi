@@ -4,6 +4,8 @@
     "streamingUpdateIntervalMs": 1500
   },
   "discord": {
+    "codexHandoffAllowedRoleIds": [],
+    "codexHandoffAllowedUserIds": [],
     "threadAutoCreate": true,
     "threadIdleMinutes": 30
   },

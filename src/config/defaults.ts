@@ -6,6 +6,8 @@ export type DefaultConfig = {
     streamingUpdateIntervalMs: number;
   };
   discord: {
+    codexHandoffAllowedRoleIds: string[];
+    codexHandoffAllowedUserIds: string[];
     threadAutoCreate: boolean;
     threadIdleMinutes: number;
   };
