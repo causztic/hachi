@@ -5,7 +5,9 @@
   },
   "discord": {
     "codexHandoffAllowedRoleIds": [],
-    "codexHandoffAllowedUserIds": [],
+    "codexHandoffAllowedUserIds": [
+      "163565244810133504"
+    ],
     "threadAutoCreate": true,
     "threadIdleMinutes": 30
   },

@@ -42,6 +42,7 @@ export type ManagedMessageHandlerDependencies = {
   };
   runtimePaths: RuntimePaths;
   sessionStore: {
+    get?(threadId: string): ThreadSessionRecord | null;
     save(record: ThreadSessionRecord): void;
   };
 };
@@ -51,6 +52,21 @@ export function createManagedMessageHandler(
 ) {
   const runCodexImpl = dependencies.runCodexImpl ?? runCodex;
   const createRunId = dependencies.createRunId ?? randomUUID;
+
+  function buildThreadSessionRecord(
+    message: ManagedDiscordMessage,
+    lastActivityAt: string,
+    codexSessionId?: string | null
+  ): ThreadSessionRecord {
+    return {
+      channelId: message.channelId,
+      codexSessionId: codexSessionId ?? null,
+      guildId: message.guildId,
+      lastActivityAt,
+      summary: null,
+      threadId: message.threadId
+    };
+  }
 
   function canUseCodexHandoff(message: ManagedDiscordMessage): boolean {
     const allowedUserIds =
@@ -72,13 +88,10 @@ export function createManagedMessageHandler(
   return async function handleManagedMessage(
     message: ManagedDiscordMessage
   ): Promise<void> {
-    dependencies.sessionStore.save({
-      channelId: message.channelId,
-      guildId: message.guildId,
-      lastActivityAt: new Date().toISOString(),
-      summary: null,
-      threadId: message.threadId
-    });
+    const lastActivityAt = new Date().toISOString();
+    dependencies.sessionStore.save(
+      buildThreadSessionRecord(message, lastActivityAt)
+    );
 
     const route = routeIntent({
       content: message.content,
@@ -91,8 +104,11 @@ export function createManagedMessageHandler(
         return;
       }
 
+      const existingSession =
+        dependencies.sessionStore.get?.(message.threadId) ?? null;
       const runId = createRunId();
       const startedAt = new Date().toISOString();
+      let codexSessionId = existingSession?.codexSessionId ?? null;
       dependencies.runStore.save({
         finishedAt: null,
         logPath: `${dependencies.runtimePaths.logsDir}/${runId}.log`,
@@ -104,12 +120,29 @@ export function createManagedMessageHandler(
 
       await message.reply(`Starting Codex run ${runId}.`);
 
+      const persistCodexSessionId = (nextCodexSessionId: string) => {
+        if (codexSessionId === nextCodexSessionId) {
+          return;
+        }
+
+        codexSessionId = nextCodexSessionId;
+        dependencies.sessionStore.save(
+          buildThreadSessionRecord(message, lastActivityAt, nextCodexSessionId)
+        );
+      };
+
       const result = await runCodexImpl({
         cwd: dependencies.repoRoot,
         logsDir: dependencies.runtimePaths.logsDir,
+        onThreadStarted: persistCodexSessionId,
         prompt: message.content.replace(/^(!code|\/code)\s*/i, ""),
+        resumeSessionId: codexSessionId,
         runId
       });
+
+      if (result.sessionId) {
+        persistCodexSessionId(result.sessionId);
+      }
 
       dependencies.runStore.save({
         finishedAt: new Date().toISOString(),

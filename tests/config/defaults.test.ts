@@ -6,7 +6,9 @@ describe("loadDefaultConfig", () => {
     const config = await loadDefaultConfig();
 
     expect(config.discord.threadAutoCreate).toBe(true);
-    expect(config.discord.codexHandoffAllowedUserIds).toEqual([]);
+    expect(config.discord.codexHandoffAllowedUserIds).toEqual([
+      "163565244810133504"
+    ]);
     expect(config.discord.codexHandoffAllowedRoleIds).toEqual([]);
     expect(config.router.explicitPrefixes).toEqual(["/code", "!code"]);
     expect(config.codex.allowEditsByDefault).toBe(true);

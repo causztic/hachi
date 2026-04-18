@@ -351,9 +351,15 @@ describe("createManagedMessageHandler", () => {
   it("routes explicit code messages to codex for an allowed user and persists the run", async () => {
     const reply = vi.fn().mockResolvedValue(undefined);
     const runStoreSave = vi.fn();
-    const runCodexImpl = vi.fn().mockResolvedValue({
-      code: 0,
-      logPath: "/repo/.hachi/logs/codex/run-123.log"
+    const sessionStoreSave = vi.fn();
+    const runCodexImpl = vi.fn().mockImplementation(async (input) => {
+      input.onThreadStarted?.("codex-thread-1");
+
+      return {
+        code: 0,
+        logPath: "/repo/.hachi/logs/codex/run-123.log",
+        sessionId: "codex-thread-1"
+      };
     });
 
     const handleManagedMessage = createManagedMessageHandler({
@@ -388,7 +394,8 @@ describe("createManagedMessageHandler", () => {
       },
       runtimePaths: defaultRuntimePaths,
       sessionStore: {
-        save: vi.fn()
+        get: vi.fn().mockReturnValue(null),
+        save: sessionStoreSave
       }
     });
 
@@ -404,17 +411,102 @@ describe("createManagedMessageHandler", () => {
       threadId: "t1"
     });
 
-    expect(runCodexImpl).toHaveBeenCalledWith({
-      cwd: "/repo",
-      logsDir: "/repo/.hachi/logs/codex",
-      prompt: "fix the failing tests",
-      runId: "run-123"
-    });
+    expect(runCodexImpl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: "/repo",
+        logsDir: "/repo/.hachi/logs/codex",
+        onThreadStarted: expect.any(Function),
+        prompt: "fix the failing tests",
+        resumeSessionId: null,
+        runId: "run-123"
+      })
+    );
     expect(runStoreSave).toHaveBeenCalledTimes(2);
+    expect(sessionStoreSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        codexSessionId: "codex-thread-1",
+        threadId: "t1"
+      })
+    );
     expect(reply).toHaveBeenCalledWith("Starting Codex run run-123.");
     expect(reply).toHaveBeenCalledWith(
       "Codex run run-123 finished. Log: /repo/.hachi/logs/codex/run-123.log"
     );
+  });
+
+  it("resumes the stored codex session for later explicit code messages", async () => {
+    const reply = vi.fn().mockResolvedValue(undefined);
+    const runStoreSave = vi.fn();
+    const runCodexImpl = vi.fn().mockResolvedValue({
+      code: 0,
+      logPath: "/repo/.hachi/logs/codex/run-123.log",
+      sessionId: "codex-thread-1"
+    });
+
+    const handleManagedMessage = createManagedMessageHandler({
+      chatClient: {
+        reply: vi.fn()
+      },
+      createRunId: () => "run-123",
+      defaultConfig: {
+        codex: {
+          allowEditsByDefault: true,
+          streamingUpdateIntervalMs: 1500
+        },
+        discord: {
+          codexHandoffAllowedRoleIds: [],
+          codexHandoffAllowedUserIds: ["u1"],
+          threadAutoCreate: true,
+          threadIdleMinutes: 30
+        },
+        llm: defaultLlmConfig,
+        router: {
+          explicitPrefixes: ["/code", "!code"]
+        }
+      },
+      promptBundle: {
+        persona: "You are Hachi, a young shrine-keeper bee familiar.",
+        router: "Prefer codex only for coding work."
+      },
+      repoRoot: "/repo",
+      runCodexImpl,
+      runStore: {
+        save: runStoreSave
+      },
+      runtimePaths: defaultRuntimePaths,
+      sessionStore: {
+        get: vi.fn().mockReturnValue({
+          channelId: "c1",
+          codexSessionId: "codex-thread-1",
+          guildId: "g1",
+          lastActivityAt: "2026-04-18T02:00:00.000Z",
+          summary: null,
+          threadId: "t1"
+        }),
+        save: vi.fn()
+      }
+    });
+
+    await handleManagedMessage({
+      authorId: "u1",
+      channelId: "c1",
+      content: "/code continue from the last attempt",
+      guildId: "g1",
+      history: async () => [],
+      messageId: "m1",
+      reply,
+      roleIds: [],
+      threadId: "t1"
+    });
+
+    expect(runCodexImpl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "continue from the last attempt",
+        resumeSessionId: "codex-thread-1",
+        runId: "run-123"
+      })
+    );
+    expect(runStoreSave).toHaveBeenCalledTimes(2);
   });
 
   it("routes explicit code messages to codex for an allowed role and persists the run", async () => {
@@ -422,7 +514,8 @@ describe("createManagedMessageHandler", () => {
     const runStoreSave = vi.fn();
     const runCodexImpl = vi.fn().mockResolvedValue({
       code: 0,
-      logPath: "/repo/.hachi/logs/codex/run-123.log"
+      logPath: "/repo/.hachi/logs/codex/run-123.log",
+      sessionId: null
     });
 
     const handleManagedMessage = createManagedMessageHandler({
@@ -457,6 +550,7 @@ describe("createManagedMessageHandler", () => {
       },
       runtimePaths: defaultRuntimePaths,
       sessionStore: {
+        get: vi.fn().mockReturnValue(null),
         save: vi.fn()
       }
     });
@@ -473,12 +567,16 @@ describe("createManagedMessageHandler", () => {
       threadId: "t1"
     });
 
-    expect(runCodexImpl).toHaveBeenCalledWith({
-      cwd: "/repo",
-      logsDir: "/repo/.hachi/logs/codex",
-      prompt: "fix the failing tests",
-      runId: "run-123"
-    });
+    expect(runCodexImpl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: "/repo",
+        logsDir: "/repo/.hachi/logs/codex",
+        onThreadStarted: expect.any(Function),
+        prompt: "fix the failing tests",
+        resumeSessionId: null,
+        runId: "run-123"
+      })
+    );
     expect(runStoreSave).toHaveBeenCalledTimes(2);
     expect(reply).toHaveBeenCalledWith("Starting Codex run run-123.");
     expect(reply).toHaveBeenCalledWith(
